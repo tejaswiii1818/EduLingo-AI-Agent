@@ -1,332 +1,193 @@
-\# EduLingo AI Agent
+# 🌍 EduLingo AI Agent
 
+AI-powered multilingual learning assistant built using **Python Flask**, **IBM watsonx.ai**, **IBM Granite Models**, and **Retrieval-Augmented Generation (RAG)**.
 
+The application enables students to upload academic documents and receive intelligent translations, summaries, explanations, quizzes, and document-based AI chat while preserving educational context and technical accuracy.
 
-\## Overview
+---
 
+# Features
 
+| Feature | Description |
+|---------|-------------|
+| 🌐 Multi-language Translation | Translate academic documents into multiple regional languages |
+| 📄 PDF Upload | Upload PDF documents for AI-powered processing |
+| 📝 AI Summarization | Generate concise summaries from uploaded documents |
+| 💡 Content Explanation | Simplify difficult concepts for better understanding |
+| 🎯 Quiz Generation | Automatically generate quizzes from uploaded content |
+| 🤖 AI Chat | Ask questions about uploaded documents using RAG |
+| 📚 History Management | Store previous translations, summaries, quizzes and AI chats |
+| ⚡ IBM Granite Models | High-quality language understanding and reasoning |
+| 🔍 Retrieval-Augmented Generation (RAG) | Retrieves document context before generating responses |
+| 📱 Responsive Interface | Clean web interface accessible on desktop and mobile |
 
-EduLingo AI Agent is an AI-powered multilingual learning assistant developed using Python, Flask, IBM watsonx.ai, IBM Granite Models, and Retrieval-Augmented Generation (RAG). The application enables students to upload academic documents and receive intelligent translations, summaries, explanations, quizzes, and document-based question answering while preserving educational context and technical accuracy.
+---
 
-
-
-\---
-
-
-
-\## Features
-
-
-
-\* Multi-language translation of academic documents
-
-\* PDF document upload and processing
-
-\* AI-powered document summarization
-
-\* Simplified content explanation
-
-\* Automatic quiz generation from uploaded documents
-
-\* AI Chat using Retrieval-Augmented Generation (RAG)
-
-\* Document-based question answering
-
-\* History management for previous translations, summaries, explanations, quizzes, and chats
-
-\* Responsive and user-friendly web interface
-
-
-
-\---
-
-
-
-\## Technologies Used
-
-
-
-\* Python
-
-\* Flask
-
-\* IBM watsonx.ai
-
-\* IBM Granite Models
-
-\* HTML5
-
-\* CSS3
-
-\* JavaScript
-
-\* Bootstrap
-
-\* Retrieval-Augmented Generation (RAG)
-
-\* PyMuPDF
-
-\* Python-dotenv
-
-
-
-\---
-
-
-
-\## Project Structure
-
-
+# Project Structure
 
 ```text
-
 EduLingo-AI-Agent/
-
 │
-
-├── app.py
-
+├── app.py                     # Flask backend
+├── README.md
 ├── requirements.txt
-
-├── .env
-
 ├── .gitignore
-
+│
 ├── templates/
-
+│   └── index.html             # Main user interface
+│
 ├── static/
-
 │   ├── css/
-
+│   │   └── style.css
 │   ├── js/
-
-│   └── uploads/
-
-├── uploads/
-
-├── translated/
-
-└── README.md
-
+│   │   └── app.js
+│
+├── uploads/                   # Uploaded academic documents
+├── translated/                # Generated translated documents
+│
+├── check_import.py
+├── inspect_sdk.py
+├── _test_upload.py
+├── _test_translate.py
+├── _test_summarize.py
+├── _test_explain.py
+└── _test_persistence.py
 ```
 
+---
 
+# Quick Start
 
-\---
-
-
-
-\## Modules
-
-
-
-\### Translate
-
-
-
-Translate academic documents into multiple regional languages while preserving educational context.
-
-
-
-\### Summarize
-
-
-
-Generate concise summaries and highlight important concepts from uploaded documents.
-
-
-
-\### Explain
-
-
-
-Provide simple explanations for difficult academic topics to improve understanding.
-
-
-
-\### Quiz Generator
-
-
-
-Automatically generate multiple-choice questions based on uploaded learning material.
-
-
-
-\### AI Chat (RAG)
-
-
-
-Answer user questions by retrieving relevant information from uploaded documents.
-
-
-
-\### History
-
-
-
-Store previous translations, summaries, explanations, quizzes, and AI chat sessions for future reference.
-
-
-
-\---
-
-
-
-\## IBM Technologies
-
-
-
-\* IBM watsonx.ai
-
-\* IBM Granite Foundation Models
-
-\* Retrieval-Augmented Generation (RAG)
-
-
-
-\---
-
-
-
-\## How to Run
-
-
-
-\### Clone the Repository
-
-
+## 1. Clone Repository
 
 ```bash
-
 git clone https://github.com/tejaswiii1818/EduLingo-AI-Agent.git
 
 cd EduLingo-AI-Agent
-
 ```
 
+---
 
-
-\### Create Virtual Environment
-
-
+## 2. Create Virtual Environment
 
 ```bash
-
 python -m venv venv
-
-venv\\Scripts\\activate
-
 ```
 
-
-
-\### Install Dependencies
-
-
+Windows
 
 ```bash
+venv\Scripts\activate
+```
 
+Linux / macOS
+
+```bash
+source venv/bin/activate
+```
+
+---
+
+## 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
-
 ```
 
+---
 
+## 4. Configure Environment Variables
 
-\### Configure Environment Variables
+Create a **.env** file and add:
 
-
-
-Create a `.env` file and add:
-
-
-
-```text
-
-WATSONX\_API\_KEY=
-
-WATSONX\_PROJECT\_ID=
-
-WATSONX\_URL=https://us-south.ml.cloud.ibm.com
-
-WATSONX\_MODEL\_ID=ibm/granite-3-3-8b-instruct
-
-FLASK\_SECRET\_KEY=
-
+```env
+WATSONX_API_KEY=your_api_key
+WATSONX_PROJECT_ID=your_project_id
+WATSONX_URL=https://us-south.ml.cloud.ibm.com
+WATSONX_MODEL_ID=ibm/granite-3-3-8b-instruct
 ```
 
+---
 
-
-\### Run the Application
-
-
+## 5. Run the Application
 
 ```bash
-
 python app.py
-
 ```
 
-
-
-Open your browser:
-
-
+Open
 
 ```
-
 http://localhost:5000
-
 ```
 
+---
 
+# IBM Technologies Used
 
-\---
+| Technology | Purpose |
+|------------|---------|
+| IBM watsonx.ai | AI model platform |
+| IBM Granite Models | Translation, summarization, explanation, quiz generation and AI chat |
+| IBM Cloud Lite | Cloud services |
+| Retrieval-Augmented Generation (RAG) | Context-aware document question answering |
+| Python Flask | Backend development |
+| HTML, CSS, JavaScript | Frontend development |
 
+---
 
+# Application Workflow
 
-\## Future Enhancements
+1. Upload an academic document.
+2. Extract text from the uploaded file.
+3. Store document content for retrieval.
+4. Retrieve relevant document chunks using RAG.
+5. IBM Granite Model processes the retrieved context.
+6. Generate:
+   - Translation
+   - Summary
+   - Explanation
+   - Quiz
+   - AI Chat responses
+7. Store outputs in History.
+8. Display results through the web interface.
 
+---
 
+# API Endpoints
 
-\* Voice-based document interaction
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | /api/upload | Upload document |
+| POST | /api/translate | Translate document |
+| POST | /api/summarize | Generate summary |
+| POST | /api/explain | Explain document |
+| POST | /api/quiz | Generate quiz |
+| POST | /api/chat | Document-based AI chat |
+| GET | /api/history | Retrieve previous activities |
 
-\* OCR support for handwritten notes
+---
 
-\* Support for DOCX and PPT files
+# Security Features
 
-\* Personalized learning recommendations
+- Environment variables for IBM credentials
+- Secure API communication
+- File upload validation
+- Prompt engineering for controlled responses
+- Retrieval-Augmented Generation (RAG) for accurate responses
 
-\* Cloud deployment
+---
 
+# Future Enhancements
 
+- Voice-based interaction
+- OCR support for scanned PDFs
+- PowerPoint and Word document support
+- Personalized learning recommendations
+- Cloud deployment on IBM Cloud
 
-\---
+---
 
+# License
 
-
-\## Developed By
-
-
-
-\*\*Medipally Tejaswini\*\*
-
-
-
-B.Tech – Information Technology
-
-
-
-Institute of Aeronautical Engineering
-
-
-
-\---
-
-
-
-\## License
-
-
-
-This project is developed for educational and academic purposes.
-
+Educational Project developed for the IBM SkillsBuild Hackathon.
