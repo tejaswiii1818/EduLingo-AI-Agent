@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduLingo AI Agent</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        crossorigin="anonymous" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body data-active="{{ active | default('dashboard') }}">
+
+<!-- Mobile overlay -->
+<div id="sidebarOverlay" class="position-fixed top-0 start-0 w-100 h-100"
+     style="background:rgba(0,0,0,0.4);z-index:999;display:none;"></div>
+
+<div class="app-wrapper">
+
+  <!-- ================================================================== -->
+  <!-- SIDEBAR                                                             -->
+  <!-- ================================================================== -->
+  <aside class="sidebar" id="sidebar">
+
+    <a href="{{ url_for('index') }}" class="sidebar-brand">
+      <div class="brand-icon">🎓</div>
+      <span class="brand-name">Edu<span>Lingo</span></span>
+    </a>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="{{ url_for('index') }}"    class="nav-link" data-page="dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+
+      <div class="nav-section-label mt-2">Features</div>
+      <a href="{{ url_for('translate') }}" class="nav-link" data-page="translate"><i class="bi bi-translate"></i> Translate</a>
+      <a href="{{ url_for('summarize') }}" class="nav-link" data-page="summarize"><i class="bi bi-journal-text"></i> Summarize</a>
+      <a href="{{ url_for('explain') }}"   class="nav-link" data-page="explain"><i class="bi bi-lightbulb-fill"></i> Explain</a>
+      <a href="{{ url_for('quiz') }}"      class="nav-link" data-page="quiz"><i class="bi bi-patch-question-fill"></i> Quiz</a>
+      <a href="{{ url_for('ask') }}"       class="nav-link" data-page="ask"><i class="bi bi-search-heart-fill"></i> Ask (RAG)</a>
+      <a href="{{ url_for('chat') }}"      class="nav-link" data-page="chat"><i class="bi bi-chat-dots-fill"></i> AI Chat</a>
+
+      <div class="nav-section-label mt-2">Records</div>
+      <a href="{{ url_for('history') }}"  class="nav-link" data-page="history"><i class="bi bi-clock-history"></i> History</a>
+    </nav>
+
+    <div class="sidebar-footer">v0.1.0 &mdash; EduLingo AI</div>
+  </aside>
+
+  <!-- ================================================================== -->
+  <!-- MAIN CONTENT                                                        -->
+  <!-- ================================================================== -->
+  <div class="main-content">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button id="sidebarToggle"
+              class="btn btn-sm btn-outline-secondary topbar-toggle d-flex d-md-none me-3"
+              aria-label="Toggle sidebar">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+
+      <span class="topbar-title">
+        {% if active is not defined or active == 'dashboard' %}Dashboard
+        {% elif active == 'translate' %}Translate Documents
+        {% elif active == 'summarize' %}Summarize Content
+        {% elif active == 'explain'   %}Explain Concepts
+        {% elif active == 'quiz'      %}Quiz Generator
+        {% elif active == 'ask'       %}Ask (RAG)
+        {% elif active == 'chat'      %}AI Chat
+        {% elif active == 'history'   %}History
+        {% else %}Dashboard
+        {% endif %}
+      </span>
+
+      <span class="topbar-badge">AI Powered</span>
+    </header>
+
+    <!-- Page body -->
+    <main class="page-body">
+
+      <!-- ================================================================ -->
+      <!-- DASHBOARD                                                         -->
+      <!-- ================================================================ -->
+      {% if active is not defined or active == 'dashboard' %}
+
+      <!-- Stat strip -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-blue-soft"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <div>
+              <div class="stat-value" id="stat-files">0</div>
+              <div class="stat-label">Files Uploaded</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-purple-soft"><i class="bi bi-translate"></i></div>
+            <div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Translations</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-green-soft"><i class="bi bi-journal-check"></i></div>
+            <div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Summaries</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-orange-soft"><i class="bi bi-patch-question-fill"></i></div>
+            <div>
+              <div class="stat-value">0</div>
+              <div class="stat-label">Quizzes Generated</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Upload Document section ──────────────────────────────────── -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="upload-card" id="uploadCard">
+            <div class="upload-card-header">
+              <div class="card-icon bg-blue-soft"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+              <div>
+                <div class="upload-card-title">Upload Document</div>
+                <div class="upload-card-subtitle">PDF, DOCX, PPTX, or TXT &mdash; up to 50 MB</div>
+              </div>
+            </div>
+
+            <!-- Drop zone -->
+            <div class="drop-zone" id="dropZone" role="button" tabindex="0"
+                 aria-label="Drop file here or click to browse">
+              <i class="bi bi-file-earmark-arrow-up drop-zone-icon"></i>
+              <p class="drop-zone-text">Drag &amp; drop your file here</p>
+              <p class="drop-zone-or">or</p>
+              <label class="btn-browse" for="fileInput">
+                <i class="bi bi-folder2-open"></i> Browse File
+              </label>
+              <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.txt"
+                     class="visually-hidden" />
+              <p class="drop-zone-formats">
+                Supported: <strong>PDF</strong> &nbsp;|&nbsp; <strong>DOCX</strong>
+                &nbsp;|&nbsp; <strong>PPTX</strong> &nbsp;|&nbsp; <strong>TXT</strong>
+              </p>
+            </div>
+
+            <!-- Selected file info -->
+            <div id="fileInfo" class="file-info d-none">
+              <i class="bi bi-file-earmark-fill file-info-icon"></i>
+              <span id="fileInfoName" class="file-info-name"></span>
+              <span id="fileInfoSize" class="file-info-size"></span>
+              <button id="clearFile" class="file-info-clear" aria-label="Remove file">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            </div>
+
+            <!-- Progress bar -->
+            <div id="uploadProgress" class="upload-progress d-none">
+              <div class="upload-progress-bar" id="uploadProgressBar" role="progressbar"
+                   aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div id="uploadProgressLabel" class="upload-progress-label d-none">Uploading…</div>
+
+            <!-- Upload button -->
+            <div class="mt-3">
+              <button id="uploadBtn" class="btn-upload" disabled>
+                <i class="bi bi-cloud-upload"></i> Upload &amp; Parse
+              </button>
+            </div>
+
+            <!-- Notifications -->
+            <div id="uploadSuccess" class="upload-alert upload-alert-success d-none">
+              <i class="bi bi-check-circle-fill"></i>
+              <span id="uploadSuccessMsg"></span>
+            </div>
+            <div id="uploadError" class="upload-alert upload-alert-error d-none">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span id="uploadErrorMsg"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Last uploaded document result ────────────────────────────── -->
+      <div id="docResultRow" class="row g-3 mb-4 d-none">
+        <div class="col-12">
+          <div class="doc-result-card">
+            <div class="doc-result-header">
+              <i class="bi bi-file-earmark-check-fill doc-result-icon"></i>
+              <div>
+                <div class="doc-result-title" id="docResultName"></div>
+                <span class="card-status status-ready">Ready for AI Processing</span>
+              </div>
+            </div>
+            <div class="doc-result-stats">
+              <div class="doc-stat">
+                <span class="doc-stat-label">Type</span>
+                <span class="doc-stat-value" id="docResultType"></span>
+              </div>
+              <div class="doc-stat">
+                <span class="doc-stat-label">Pages</span>
+                <span class="doc-stat-value" id="docResultPages"></span>
+              </div>
+              <div class="doc-stat">
+                <span class="doc-stat-label">Words</span>
+                <span class="doc-stat-value" id="docResultWords"></span>
+              </div>
+              <div class="doc-stat">
+                <span class="doc-stat-label">Session</span>
+                <span class="doc-stat-value doc-stat-session" id="docResultSession"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature cards grid -->
+      <h6 class="section-label mb-3">Available Features</h6>
+
+      <div class="row g-3">
+
+        <!-- Summarize -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('summarize') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-purple-soft"><i class="bi bi-journal-text"></i></div>
+            <div class="card-title">Summarize</div>
+            <div class="card-desc">Get a concise, intelligent summary of long documents, articles, or notes in seconds.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- Explain -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('explain') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-teal-soft"><i class="bi bi-lightbulb-fill"></i></div>
+            <div class="card-title">Explain</div>
+            <div class="card-desc">Get a chapter-wise, plain-English explanation of any uploaded document.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- Quiz -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('quiz') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-orange-soft"><i class="bi bi-patch-question-fill"></i></div>
+            <div class="card-title">Quiz Generator</div>
+            <div class="card-desc">Automatically generate multiple-choice or open-ended quiz questions from any document.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- Ask RAG -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('ask') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-pink-soft"><i class="bi bi-search-heart-fill"></i></div>
+            <div class="card-title">Ask (RAG)</div>
+            <div class="card-desc">Ask questions about your uploaded documents and get grounded, cited answers via RAG.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- AI Chat -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('chat') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-green-soft"><i class="bi bi-chat-dots-fill"></i></div>
+            <div class="card-title">AI Chat</div>
+            <div class="card-desc">Have a freeform educational conversation with an AI tutor on any topic you choose.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- Translate -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <a href="{{ url_for('translate') }}" class="feature-card feature-card-link">
+            <div class="card-icon bg-blue-soft"><i class="bi bi-translate"></i></div>
+            <div class="card-title">Translate</div>
+            <div class="card-desc">Upload a document and translate it into any supported language using AI.</div>
+            <span class="card-status status-ready">Available</span>
+          </a>
+        </div>
+
+        <!-- History -->
+        <div class="col-12 col-sm-6 col-xl-4">
+          <div class="feature-card" data-coming-soon>
+            <div class="card-icon bg-yellow-soft"><i class="bi bi-clock-history"></i></div>
+            <div class="card-title">History</div>
+            <div class="card-desc">Browse and revisit all past translations, summaries, quizzes, and AI conversations.</div>
+            <span class="card-status status-ready">Available</span>
+          </div>
+        </div>
+
+      </div><!-- /feature cards -->
+
+      {% elif active == 'translate' %}
+      <!-- ================================================================ -->
+      <!-- TRANSLATE PAGE                                                    -->
+      <!-- ================================================================ -->
+      <div class="mb-3 d-flex align-items-center gap-2">
+        <a href="{{ url_for('index') }}" class="btn-back-link">
+          <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+      </div>
+
+      <div class="translate-layout">
+
+        <!-- LEFT: Controls -->
+        <div class="tl-panel">
+
+          <!-- Document session info (populated by JS from sessionStorage) -->
+          <p class="tl-panel-title">Source Document</p>
+          <div id="tl-session-loaded" class="session-picker d-none">
+            <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+            <div>
+              <div class="session-picker-name" id="tl-session-filename"></div>
+              <div class="session-picker-meta">
+                <span id="tl-session-words"></span> words
+                &nbsp;&middot;&nbsp; <span id="tl-session-type"></span>
+              </div>
+            </div>
+          </div>
+          <div id="tl-session-missing" class="no-session-notice">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              No document loaded.
+              <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                Upload one from the Dashboard
+              </a>
+              first, then return here to translate.
+            </div>
+          </div>
+
+          <!-- Language selector -->
+          <p class="tl-panel-title mt-3">Target Language</p>
+          <div class="lang-grid" id="langGrid">
+            {% for lang in ['English','Hindi','Telugu','Tamil','Kannada','Malayalam','Marathi','Bengali'] %}
+            <button class="lang-btn" data-lang="{{ lang }}">{{ lang }}</button>
+            {% endfor %}
+          </div>
+
+          <!-- Translate button -->
+          <button id="translateBtn" class="btn-translate" disabled>
+            <i class="bi bi-translate"></i> Translate Document
+          </button>
+
+          <!-- Progress -->
+          <div id="tl-progress" class="tl-progress d-none">
+            <div class="tl-progress-bar" id="tl-progress-bar"></div>
+          </div>
+          <div id="tl-progress-label" class="tl-progress-label d-none">Translating…</div>
+
+          <!-- Error alert -->
+          <div id="tl-error" class="tl-alert tl-alert-error d-none">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span id="tl-error-msg"></span>
+          </div>
+        </div>
+
+        <!-- RIGHT: Result -->
+        <div class="tl-panel">
+          <div id="tl-result-empty" class="history-empty">
+            <i class="bi bi-translate"></i>
+            <p>Translation result will appear here.</p>
+          </div>
+
+          <div id="tl-result-panel" class="d-none">
+            <div class="tl-result-header">
+              <div class="tl-result-lang">
+                <i class="bi bi-translate"></i>
+                <span id="tl-result-lang-name"></span>
+                <span class="mode-badge" id="tl-mode-badge"></span>
+              </div>
+              <div class="tl-result-actions">
+                <button class="btn-icon-action" id="tl-copy-btn">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <button class="btn-icon-action" id="tl-download-btn">
+                  <i class="bi bi-download"></i> Download
+                </button>
+              </div>
+            </div>
+
+            <div class="tl-output" id="tl-output" readonly></div>
+
+            <div class="tl-result-meta">
+              <span><strong id="tl-word-count"></strong> words</span>
+              <span>Source: <strong id="tl-source-filename"></strong></span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /translate-layout -->
+
+      {% elif active == 'history' %}
+      <!-- ================================================================ -->
+      <!-- HISTORY PAGE                                                      -->
+      <!-- ================================================================ -->
+      <div id="historyContainer">
+        <div class="history-empty" id="historyEmpty">
+          <i class="bi bi-clock-history"></i>
+          <p>No activity yet. Upload a document and use a feature to see your history here.</p>
+        </div>
+        <div class="history-list d-none" id="historyList"></div>
+      </div>
+
+      {% elif active == 'summarize' %}
+      <!-- ================================================================ -->
+      <!-- SUMMARIZE PAGE                                                    -->
+      <!-- ================================================================ -->
+      <div class="mb-3">
+        <a href="{{ url_for('index') }}" class="btn-back-link">
+          <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+      </div>
+
+      <div class="translate-layout">
+
+        <!-- LEFT: Controls -->
+        <div class="tl-panel">
+          <p class="tl-panel-title">Source Document</p>
+
+          <!-- Session loaded -->
+          <div id="sm-session-loaded" class="session-picker d-none">
+            <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+            <div>
+              <div class="session-picker-name" id="sm-session-filename"></div>
+              <div class="session-picker-meta">
+                <span id="sm-session-words"></span> words
+                &nbsp;&middot;&nbsp; <span id="sm-session-type"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- No session -->
+          <div id="sm-session-missing" class="no-session-notice">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              No document loaded.
+              <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                Upload one from the Dashboard
+              </a>
+              first, then return here to summarize.
+            </div>
+          </div>
+
+          <!-- Generate button -->
+          <button id="summarizeBtn" class="btn-translate mt-3" disabled>
+            <i class="bi bi-journal-text"></i> Generate Summary
+          </button>
+
+          <!-- Progress -->
+          <div id="sm-progress" class="tl-progress d-none">
+            <div class="tl-progress-bar" id="sm-progress-bar"></div>
+          </div>
+          <div id="sm-progress-label" class="tl-progress-label d-none">Analysing document…</div>
+
+          <!-- Error -->
+          <div id="sm-error" class="tl-alert tl-alert-error d-none mt-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span id="sm-error-msg"></span>
+          </div>
+        </div>
+
+        <!-- RIGHT: Result -->
+        <div class="tl-panel">
+          <div id="sm-result-empty" class="history-empty">
+            <i class="bi bi-journal-text"></i>
+            <p>Summary will appear here once generated.</p>
+          </div>
+
+          <div id="sm-result-panel" class="d-none">
+
+            <!-- Header row: mode badge + action buttons -->
+            <div class="tl-result-header mb-3">
+              <div class="tl-result-lang">
+                <i class="bi bi-journal-check"></i>
+                <span>AI Summary</span>
+                <span class="mode-badge" id="sm-mode-badge"></span>
+              </div>
+              <div class="tl-result-actions">
+                <button class="btn-icon-action" id="sm-copy-btn">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <button class="btn-icon-action" id="sm-download-btn">
+                  <i class="bi bi-download"></i> Download
+                </button>
+                <button class="btn-icon-action" id="sm-clear-btn">
+                  <i class="bi bi-x-circle"></i> Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary paragraph -->
+            <p class="sm-section-title">Summary</p>
+            <div class="tl-output sm-summary-box" id="sm-summary-text"></div>
+
+            <!-- Key points -->
+            <p class="sm-section-title mt-3">Key Points</p>
+            <ul class="sm-key-points" id="sm-key-points"></ul>
+
+            <!-- Meta row -->
+            <div class="tl-result-meta">
+              <span><strong id="sm-word-count"></strong> words</span>
+              <span>Source: <strong id="sm-source-filename"></strong></span>
+            </div>
+
+          </div><!-- /sm-result-panel -->
+        </div>
+
+      </div><!-- /translate-layout -->
+
+      {% elif active == 'explain' %}
+      <!-- ================================================================ -->
+      <!-- EXPLAIN PAGE                                                      -->
+      <!-- ================================================================ -->
+      <div class="mb-3">
+        <a href="{{ url_for('index') }}" class="btn-back-link">
+          <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+      </div>
+
+      <div class="translate-layout">
+
+        <!-- LEFT: Controls -->
+        <div class="tl-panel">
+          <p class="tl-panel-title">Source Document</p>
+
+          <div id="ex-session-loaded" class="session-picker d-none">
+            <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+            <div>
+              <div class="session-picker-name" id="ex-session-filename"></div>
+              <div class="session-picker-meta">
+                <span id="ex-session-words"></span> words
+                &nbsp;&middot;&nbsp; <span id="ex-session-type"></span>
+              </div>
+            </div>
+          </div>
+
+          <div id="ex-session-missing" class="no-session-notice">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              No document loaded.
+              <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                Upload one from the Dashboard
+              </a>
+              first, then return here to explain.
+            </div>
+          </div>
+
+          <button id="explainBtn" class="btn-translate mt-3" style="background:var(--teal);" disabled>
+            <i class="bi bi-lightbulb-fill"></i> Generate Explanation
+          </button>
+
+          <div id="ex-progress" class="tl-progress d-none">
+            <div class="tl-progress-bar ex-progress-bar" id="ex-progress-bar"></div>
+          </div>
+          <div id="ex-progress-label" class="tl-progress-label d-none">Analysing document…</div>
+
+          <div id="ex-error" class="tl-alert tl-alert-error d-none mt-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span id="ex-error-msg"></span>
+          </div>
+        </div>
+
+        <!-- RIGHT: Result -->
+        <div class="tl-panel ex-result-outer">
+          <div id="ex-result-empty" class="history-empty">
+            <i class="bi bi-lightbulb"></i>
+            <p>Chapter-wise explanation will appear here.</p>
+          </div>
+
+          <div id="ex-result-panel" class="d-none">
+            <!-- Header: mode badge + actions -->
+            <div class="tl-result-header mb-3">
+              <div class="tl-result-lang">
+                <i class="bi bi-lightbulb-fill" style="color:var(--teal);"></i>
+                <span>AI Explanation</span>
+                <span class="mode-badge" id="ex-mode-badge"></span>
+              </div>
+              <div class="tl-result-actions">
+                <button class="btn-icon-action" id="ex-copy-btn">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+                <button class="btn-icon-action" id="ex-download-btn">
+                  <i class="bi bi-download"></i> Download
+                </button>
+                <button class="btn-icon-action" id="ex-clear-btn">
+                  <i class="bi bi-x-circle"></i> Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Scrollable section list -->
+            <div class="ex-sections-scroll" id="ex-sections"></div>
+
+            <!-- Meta -->
+            <div class="tl-result-meta mt-3">
+              <span><strong id="ex-word-count"></strong> words</span>
+              <span>Source: <strong id="ex-source-filename"></strong></span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /translate-layout -->
+
+      {% else %}
+      <!-- ================================================================ -->
+      <!-- PLACEHOLDER FEATURE PAGES                                         -->
+      <!-- ================================================================ -->
+      <div class="row justify-content-center">
+        <div class="col-12">
+          {% if active == 'quiz' %}
+          <div class="mb-3">
+            <a href="{{ url_for('index') }}" class="btn-back-link">
+              <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+          </div>
+
+          <div class="translate-layout quiz-layout">
+
+            <!-- LEFT: Controls -->
+            <div class="tl-panel quiz-controls">
+              <p class="tl-panel-title">Source Document</p>
+
+              <div id="quiz-session-loaded" class="session-picker d-none">
+                <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+                <div>
+                  <div class="session-picker-name" id="quiz-session-filename"></div>
+                  <div class="session-picker-meta">
+                    <span id="quiz-session-words"></span> words
+                    &nbsp;&middot;&nbsp; <span id="quiz-session-type"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="quiz-session-missing" class="no-session-notice">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                  No document loaded.
+                  <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                    Upload one from the Dashboard
+                  </a>
+                  first, then return here to generate a quiz.
+                </div>
+              </div>
+
+              <button id="generateQuizBtn" class="btn-translate mt-3" disabled>
+                <i class="bi bi-patch-question-fill"></i> Generate Quiz
+              </button>
+              <button id="submitQuizBtn" class="btn-translate quiz-btn-submit mt-2" disabled>
+                <i class="bi bi-check2-circle"></i> Submit Quiz
+              </button>
+              <button id="resetQuizBtn" class="btn-translate quiz-btn-reset mt-2" disabled>
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Quiz
+              </button>
+
+              <div id="quiz-progress" class="tl-progress d-none">
+                <div class="tl-progress-bar quiz-progress-bar" id="quiz-progress-bar"></div>
+              </div>
+              <div id="quiz-progress-label" class="tl-progress-label d-none">Generating quiz…</div>
+
+              <div id="quiz-error" class="tl-alert tl-alert-error d-none mt-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span id="quiz-error-msg"></span>
+              </div>
+            </div>
+
+            <!-- RIGHT: Result -->
+            <div class="tl-panel quiz-result-panel">
+              <div id="quiz-result-empty" class="history-empty">
+                <i class="bi bi-patch-question-fill"></i>
+                <p>Your quiz will appear here once generated.</p>
+              </div>
+
+              <div id="quiz-result-panel" class="d-none">
+                <div class="tl-result-header mb-3">
+                  <div class="tl-result-lang quiz-result-title">
+                    <i class="bi bi-patch-question-fill"></i>
+                    <span>Quiz Generator</span>
+                    <span class="mode-badge" id="quiz-mode-badge"></span>
+                  </div>
+                  <div class="quiz-result-meta-badge">
+                    <span><strong id="quiz-question-count"></strong> Questions</span>
+                    <span>Source: <strong id="quiz-source-filename"></strong></span>
+                  </div>
+                </div>
+
+                <div id="quiz-score-card" class="quiz-score-card d-none">
+                  <div class="quiz-score-row">
+                    <div>
+                      <div class="quiz-score-label">Score</div>
+                      <div class="quiz-score-value" id="quiz-score-value"></div>
+                    </div>
+                    <div>
+                      <div class="quiz-score-label">Percentage</div>
+                      <div class="quiz-score-percentage" id="quiz-score-percentage"></div>
+                    </div>
+                  </div>
+                  <div class="quiz-score-message" id="quiz-score-message"></div>
+                </div>
+
+                <div class="quiz-questions" id="quiz-questions"></div>
+              </div>
+            </div>
+
+          </div>
+          {% elif active == 'ask' %}
+            <div class="mb-3">
+              <a href="{{ url_for('index') }}" class="btn-back-link">
+                <i class="bi bi-arrow-left"></i> Dashboard
+              </a>
+            </div>
+
+            <div class="translate-layout ask-layout">
+
+              <!-- LEFT: Controls -->
+              <div class="tl-panel ask-controls">
+                <p class="tl-panel-title">Source Document</p>
+
+                <div id="ask-session-loaded" class="session-picker d-none">
+                  <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+                  <div>
+                    <div class="session-picker-name" id="ask-session-filename"></div>
+                    <div class="session-picker-meta">
+                      <span id="ask-session-words"></span> words
+                      &nbsp;&middot;&nbsp; <span id="ask-session-type"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="ask-session-missing" class="no-session-notice">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <div>
+                    No document loaded.
+                    <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                      Upload one from the Dashboard
+                    </a>
+                    first, then return here to ask questions.
+                  </div>
+                </div>
+
+                <p class="tl-panel-title mt-3">Ask a Question</p>
+                <textarea id="askQuestionInput" class="ask-input" rows="5"
+                          placeholder="Type a question about the uploaded document..."></textarea>
+
+                <button id="askQuestionBtn" class="btn-translate mt-3" disabled>
+                  <i class="bi bi-search-heart-fill"></i> Ask Question
+                </button>
+                <button id="clearChatBtn" class="btn-translate ask-btn-clear mt-2" disabled>
+                  <i class="bi bi-trash3"></i> Clear Chat
+                </button>
+
+                <div id="ask-progress" class="tl-progress d-none">
+                  <div class="tl-progress-bar ask-progress-bar" id="ask-progress-bar"></div>
+                </div>
+                <div id="ask-progress-label" class="tl-progress-label d-none">Thinking…</div>
+
+                <div id="ask-error" class="tl-alert tl-alert-error d-none mt-3">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <span id="ask-error-msg"></span>
+                </div>
+              </div>
+
+              <!-- RIGHT: Conversation -->
+              <div class="tl-panel ask-chat-panel">
+                <div class="tl-result-header mb-3">
+                  <div class="tl-result-lang ask-title-row">
+                    <i class="bi bi-search-heart-fill"></i>
+                    <span>Ask (RAG)</span>
+                  </div>
+                  <div class="ask-chat-meta">
+                    <span>Conversation history is kept for this session</span>
+                    <span>Source: <strong id="ask-source-filename"></strong></span>
+                  </div>
+                </div>
+
+                <div id="askChatEmpty" class="history-empty">
+                  <i class="bi bi-chat-square-text"></i>
+                  <p>Ask a question about the uploaded document to begin.</p>
+                </div>
+
+                <div id="askChatMessages" class="ask-chat-messages d-none"></div>
+              </div>
+
+            </div>
+            {% elif active == 'chat' %}
+          <div class="mb-3">
+            <a href="{{ url_for('index') }}" class="btn-back-link">
+              <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+          </div>
+
+          <div class="translate-layout ask-layout">
+
+            <!-- LEFT: Controls -->
+            <div class="tl-panel ask-controls">
+              <p class="tl-panel-title">Source Document</p>
+
+              <div id="chat-session-loaded" class="session-picker d-none">
+                <i class="bi bi-file-earmark-check-fill session-picker-icon"></i>
+                <div>
+                  <div class="session-picker-name" id="chat-session-filename"></div>
+                  <div class="session-picker-meta">
+                    <span id="chat-session-words"></span> words
+                    &nbsp;&middot;&nbsp; <span id="chat-session-type"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="chat-session-missing" class="no-session-notice">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                  No document loaded.
+                  <a href="{{ url_for('index') }}" style="color:inherit;font-weight:700;">
+                    Upload one from the Dashboard
+                  </a>
+                  first, then return here to chat.
+                </div>
+              </div>
+
+              <p class="tl-panel-title mt-3">Message</p>
+              <textarea id="chatMessageInput" class="ask-input" rows="5"
+                        placeholder="Type a message to the AI tutor..."></textarea>
+
+              <button id="chatSendBtn" class="btn-translate mt-3" disabled>
+                <i class="bi bi-send-fill"></i> Send
+              </button>
+              <button id="chatClearBtn" class="btn-translate ask-btn-clear mt-2" disabled>
+                <i class="bi bi-trash3"></i> Clear Chat
+              </button>
+
+              <div id="chat-progress" class="tl-progress d-none">
+                <div class="tl-progress-bar ask-progress-bar" id="chat-progress-bar"></div>
+              </div>
+              <div id="chat-progress-label" class="tl-progress-label d-none">Thinking…</div>
+
+              <div id="chat-error" class="tl-alert tl-alert-error d-none mt-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span id="chat-error-msg"></span>
+              </div>
+            </div>
+
+            <!-- RIGHT: Conversation -->
+            <div class="tl-panel ask-chat-panel">
+              <div class="tl-result-header mb-3">
+                <div class="tl-result-lang ask-title-row">
+                  <i class="bi bi-chat-dots-fill"></i>
+                  <span>AI Chat</span>
+                </div>
+                <div class="ask-chat-meta">
+                  <span>Conversation history is kept for this session</span>
+                  <span>Source: <strong id="chat-source-filename"></strong></span>
+                </div>
+              </div>
+
+              <div id="chatChatEmpty" class="history-empty">
+                <i class="bi bi-chat-dots-fill"></i>
+                <p>Send a message to begin the conversation.</p>
+              </div>
+
+              <div id="chatChatMessages" class="ask-chat-messages d-none"></div>
+            </div>
+
+          </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </main>
+  </div><!-- /main-content -->
+</div><!-- /app-wrapper -->
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+<!-- App JS -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
