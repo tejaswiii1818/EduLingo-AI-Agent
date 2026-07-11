@@ -189,5 +189,4 @@ http://localhost:5000
 ---
 
 # License
-
-Educational Project developed for the IBM SkillsBuild Hackathon.
+Educational project focused on improving multilingual learning through AI-powered translation, summarization, explanation, quiz generation, and document-based question answering using IBM watsonx.ai and IBM Granite Models.
